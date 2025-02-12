@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Threat Scanner</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        body {
+            background: #000;
+            color: #001aff;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .navbar {
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 15px 0;
+            background: rgba(4, 14, 104, 0.751);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .navbar a {
+            color: #001aff;
+            text-decoration: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: 2px solid transparent;
+            transition: 0.3s;
+        }
+
+        .navbar a:hover {
+            border-bottom: 2px solid #001aff;
+        }
+
+        /* Section Styling */
+        section {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: 0.5s;
+        }
+
+        #home {
+            background: url('https://source.unsplash.com/1600x900/?cybersecurity,hacking') no-repeat center center/cover;
+        }
+
+        #scan, #ipCheck {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            font-size: 18px;
+            border: 2px solid #001aff;
+            color: #001aff;
+            background: transparent;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background: #001aff;
+            color: #000;
+        }
+
+        /* Input Form */
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            width: 300px;
+        }
+
+        .input-field {
+            margin: 10px 0;
+            padding: 12px;
+            border: none;
+            border-bottom: 2px solid #001aff;
+            background: transparent;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            text-align: center;
+        }
+
+        /* Result Popups */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #000;
+            padding: 25px;
+            border: 2px solid #001aff;
+            text-align: center;
+        }
+
+        .modal button {
+            margin-top: 15px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <div class="navbar">
+        <a href="#home">🏠 Home</a>
+        <a href="#scan">🛡️ Scan Threats</a>
+        <a href="#ipCheck">🔍 IP Checker</a>
+    </div>
+
+    <!-- Home Section -->
+    <section id="home">
+        <div>
+            <h1>Cyber Threat Scanner</h1>
+            <p>Analyze threats & detect malicious activities instantly.</p>
+            <a href="#scan"><button class="btn">Start Scan</button></a>
+        </div>
+    </section>
+
+    <!-- Threat Scanning Section -->
+    <section id="scan">
+        <div>
+            <h1>Check For Anomaly</h1>
+            <div class="input-container">
+                <input type="number" class="input-field" id="srcPort" placeholder="L4 Source Port">
+                <input type="number" class="input-field" id="dstPort" placeholder="L4 Destination Port">
+                <input type="text" class="input-field" id="tcpFlags" placeholder="TCP Flags">
+                <input type="text" class="input-field" id="protocol" placeholder="Protocol">
+                <input type="text" class="input-field" id="l7Proto" placeholder="L7 Protocol">
+                <button class="btn" onclick="handleFormSubmit()">Analyze</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- IP Check Section -->
+    <section id="ipCheck">
+        <div>
+            <h1>Check Suspicious IP</h1>
+            <div class="input-container">
+                <input type="text" class="input-field" id="ipAddress" placeholder="Enter IP Address">
+                <button class="btn" onclick="handleIpCheck()">Check IP</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Result Popups -->
+    <div id="resultModal" class="modal">
+        <h2 id="predictionResult"></h2>
+        <button class="btn" onclick="closeModal()">Close</button>
+    </div>
+
+    <div id="ipResultModal" class="modal">
+        <h2 id="ipCheckResult"></h2>
+        <button class="btn" onclick="iptoip()">Close</button>
+    </div>
+
+    <script>
+        function handleFormSubmit() {
+            const inputData = {
+                L4_SRC_PORT: document.getElementById('srcPort').value,
+                L4_DST_PORT: document.getElementById('dstPort').value,
+                TCP_FLAGS: document.getElementById('tcpFlags').value,
+                PROTOCOL: document.getElementById('protocol').value,
+                L7_PROTO: document.getElementById('l7Proto').value
+            };
+
+            fetch('http://127.0.0.1:5000/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(inputData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('predictionResult').innerText = data.prediction === 0 ? 'Safe' : 'Threat Detected!';
+                document.getElementById('resultModal').style.display = 'block';
+            });
+        }
+
+        function handleIpCheck() {
+            const ipAddress = document.getElementById("ipAddress").value;
+
+            fetch("http://127.0.0.1:5000/check_ip", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ip_address: ipAddress })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("ipCheckResult").innerText = data.blocked ? `IP ${ipAddress} is BLOCKED!` : `IP ${ipAddress} is SAFE!`;
+                document.getElementById("ipResultModal").style.display = "block";
+            });
+        }
+
+        function closeModal() {
+            document.getElementById("resultModal").style.display = "none";
+        }
+
+        function iptoip() {
+            document.getElementById("ipResultModal").style.display = "none";
+        }
+    </script>
+
+</body>
+</html>

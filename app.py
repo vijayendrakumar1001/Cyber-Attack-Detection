@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import joblib
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
@@ -7,6 +7,10 @@ import sqlite3
 
 app = Flask(__name__)
 CORS(app)
+
+@app.route('/')
+def home():
+    return render_template('front.html')
 
 model = joblib.load('model.joblib')
 
