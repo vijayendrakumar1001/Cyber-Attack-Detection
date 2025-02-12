@@ -18,9 +18,9 @@
             background: #000;
             color: #001aff;
             overflow-x: hidden;
+            text-align: center;
         }
 
-        /* Navigation */
         .navbar {
             width: 100%;
             display: flex;
@@ -41,39 +41,42 @@
             font-size: 16px;
             border: 2px solid transparent;
             transition: 0.3s;
+            cursor: pointer;
         }
 
         .navbar a:hover {
             border-bottom: 2px solid #001aff;
         }
 
-        /* Section Styling */
         section {
             height: 100vh;
-            display: flex;
+            display: none;
             justify-content: center;
             align-items: center;
-            text-align: center;
-            transition: 0.5s;
+            flex-direction: column;
         }
 
         #home {
+            display: flex;
             background: url('https://source.unsplash.com/1600x900/?cybersecurity,hacking') no-repeat center center/cover;
         }
 
-        #scan, #ipCheck {
-            background: rgba(255, 255, 255, 0.05);
+        .input-container {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
         }
 
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 20px;
-        }
-
-        p {
-            font-size: 1.2em;
-            margin-bottom: 30px;
-            opacity: 0.8;
+        .input-field {
+            margin: 10px 0;
+            padding: 12px;
+            border: none;
+            border-bottom: 2px solid #001aff;
+            background: transparent;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            text-align: center;
         }
 
         .btn {
@@ -91,26 +94,6 @@
             color: #000;
         }
 
-        /* Input Form */
-        .input-container {
-            display: flex;
-            flex-direction: column;
-            width: 300px;
-        }
-
-        .input-field {
-            margin: 10px 0;
-            padding: 12px;
-            border: none;
-            border-bottom: 2px solid #001aff;
-            background: transparent;
-            color: #fff;
-            font-size: 16px;
-            outline: none;
-            text-align: center;
-        }
-
-        /* Result Popups */
         .modal {
             display: none;
             position: fixed;
@@ -122,54 +105,42 @@
             border: 2px solid #001aff;
             text-align: center;
         }
-
-        .modal button {
-            margin-top: 15px;
-        }
-
     </style>
 </head>
 <body>
 
-    <!-- Navigation Bar -->
     <div class="navbar">
-        <a href="#home">🏠 Home</a>
-        <a href="#scan">🛡️ Scan Threats</a>
-        <a href="#ipCheck">🔍 IP Checker</a>
+        <a onclick="showPage('home')">🏠 Home</a>
+        <a onclick="showPage('scan')">🛡️ Scan Threats</a>
+        <a onclick="showPage('ipCheck')">🔍 IP Checker</a>
     </div>
 
-    <!-- Home Section -->
+    <!-- Home Page -->
     <section id="home">
-        <div>
-            <h1>Cyber Threat Scanner</h1>
-            <p>Analyze threats & detect malicious activities instantly.</p>
-            <a href="#scan"><button class="btn">Start Scan</button></a>
-        </div>
+        <h1>Cyber Threat Scanner</h1>
+        <p>Analyze threats & detect malicious activities instantly.</p>
+        <button class="btn" onclick="showPage('scan')">Start Scan</button>
     </section>
 
-    <!-- Threat Scanning Section -->
+    <!-- Threat Scanning Page -->
     <section id="scan">
-        <div>
-            <h1>Check For Anomaly</h1>
-            <div class="input-container">
-                <input type="number" class="input-field" id="srcPort" placeholder="L4 Source Port">
-                <input type="number" class="input-field" id="dstPort" placeholder="L4 Destination Port">
-                <input type="text" class="input-field" id="tcpFlags" placeholder="TCP Flags">
-                <input type="text" class="input-field" id="protocol" placeholder="Protocol">
-                <input type="text" class="input-field" id="l7Proto" placeholder="L7 Protocol">
-                <button class="btn" onclick="handleFormSubmit()">Analyze</button>
-            </div>
+        <h1>Check for Anomaly</h1>
+        <div class="input-container">
+            <input type="number" class="input-field" id="srcPort" placeholder="L4 Source Port">
+            <input type="number" class="input-field" id="dstPort" placeholder="L4 Destination Port">
+            <input type="text" class="input-field" id="tcpFlags" placeholder="TCP Flags">
+            <input type="text" class="input-field" id="protocol" placeholder="Protocol">
+            <input type="text" class="input-field" id="l7Proto" placeholder="L7 Protocol">
+            <button class="btn" onclick="handleFormSubmit()">Analyze</button>
         </div>
     </section>
 
-    <!-- IP Check Section -->
+    <!-- IP Check Page -->
     <section id="ipCheck">
-        <div>
-            <h1>Check Suspicious IP</h1>
-            <div class="input-container">
-                <input type="text" class="input-field" id="ipAddress" placeholder="Enter IP Address">
-                <button class="btn" onclick="handleIpCheck()">Check IP</button>
-            </div>
+        <h1>Check Suspicious IP</h1>
+        <div class="input-container">
+            <input type="text" class="input-field" id="ipAddress" placeholder="Enter IP Address">
+            <button class="btn" onclick="handleIpCheck()">Check IP</button>
         </div>
     </section>
 
@@ -181,10 +152,17 @@
 
     <div id="ipResultModal" class="modal">
         <h2 id="ipCheckResult"></h2>
-        <button class="btn" onclick="iptoip()">Close</button>
+        <button class="btn" onclick="closeIpModal()">Close</button>
     </div>
 
     <script>
+        function showPage(pageId) {
+            document.querySelectorAll('section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(pageId).style.display = 'flex';
+        }
+
         function handleFormSubmit() {
             const inputData = {
                 L4_SRC_PORT: document.getElementById('srcPort').value,
@@ -225,9 +203,12 @@
             document.getElementById("resultModal").style.display = "none";
         }
 
-        function iptoip() {
+        function closeIpModal() {
             document.getElementById("ipResultModal").style.display = "none";
         }
+
+        // Show home page by default
+        showPage('home');
     </script>
 
 </body>
