@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for
+from flask import Flask, request, jsonify, render_template
 import joblib
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
@@ -6,24 +6,28 @@ from flask_cors import CORS
 import sqlite3
 import os
 
+def load_model():
+    global model
+    if model is None:
+        model = joblib.load('model.joblib')
+
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST"]}})
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/', methods=['GET'])
 def home():
     return render_template('front.html')
 
-@app.route('/', methods=['POST'])
-def root_post():
-    return redirect(url_for('home'))
-
 @app.errorhandler(405)
 def method_not_allowed(e):
     return jsonify({"error": "Method Not Allowed. Use /analyze or /check_ip for POST requests."}), 405
 
-# Load the model directly from the project directory
-model = joblib.load('model.joblib')
+# Check if model file exists
+model_path = 'model.joblib'
+if not os.path.exists(model_path):
+    raise FileNotFoundError(f"Model file {model_path} not found.")
 
+# Load the model once
 tcp_flags_encoder = LabelEncoder()
 protocol_encoder = LabelEncoder()
 l7_proto_encoder = LabelEncoder()
@@ -32,6 +36,9 @@ tcp_flags_encoder.fit(["SYN", "ACK", "FIN", "RST", "PSH", "URG", "ECE", "CWR", "
 protocol_encoder.fit(["TCP", "UDP", "ICMP", "IP", "SNMP", "SSL", "TLS", "IPsec"])
 l7_proto_encoder.fit(["HTTP", "FTP", "DNS", "HTTPS", "SMTP", "IMAP", "POP3", "SSH"])
 
+model = None
+load_model()
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
@@ -39,16 +46,17 @@ def analyze():
         L4_SRC_PORT = int(data.get('L4_SRC_PORT'))
         L4_DST_PORT = int(data.get('L4_DST_PORT'))
         TCP_FLAGS = tcp_flags_encoder.transform([data.get('TCP_FLAGS')])[0]
-        protocol_sum = sum(protocol_encoder.transform(data.get('PROTOCOL').split('+')))
-        L7_proto_sum = sum(l7_proto_encoder.transform(data.get('L7_PROTO').split('+')))
+        protocol_sum = np.sum(protocol_encoder.transform(data.get('PROTOCOL').split('+')))
+        L7_proto_sum = np.sum(l7_proto_encoder.transform(data.get('L7_PROTO').split('+')))
 
         input_features = np.array([[L4_SRC_PORT, L4_DST_PORT, TCP_FLAGS, protocol_sum, L7_proto_sum]], dtype=np.float32)
-        prediction_probability = model.predict(input_features)[0][0].item()
+        prediction = model.predict(input_features)
+        prediction_probability = float(prediction[0][0])
         predicted_class = int(prediction_probability > 0.5)
 
         return jsonify({
             'prediction': predicted_class,
-            'prediction_probability': float(prediction_probability),
+            'prediction_probability': prediction_probability,
             'protocol_combination_sum': f"Sum of Protocols: {protocol_sum} + {L7_proto_sum}"
         })
     except Exception as e:
@@ -72,4 +80,16 @@ def check_ip():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    from gunicorn.app.base import BaseApplication
+    class StandaloneApplication(BaseApplication):
+        def __init__(self, app, options=None):
+            self.application = app
+            self.options = options or {}
+            super().__init__()
+        def load_config(self):
+            for key, value in self.options.items():
+                self.cfg.set(key, value)
+        def load(self):
+            return self.application
+    options = {"bind": "0.0.0.0:8080", "workers": 2, "worker_class": "gevent"}
+    StandaloneApplication(app, options).run()
