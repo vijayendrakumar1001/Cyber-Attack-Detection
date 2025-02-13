@@ -80,16 +80,22 @@ def check_ip():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    from gunicorn.app.base import BaseApplication
-    class StandaloneApplication(BaseApplication):
-        def __init__(self, app, options=None):
-            self.application = app
-            self.options = options or {}
-            super().__init__()
-        def load_config(self):
-            for key, value in self.options.items():
-                self.cfg.set(key, value)
-        def load(self):
-            return self.application
-    options = {"bind": "0.0.0.0:8080", "workers": 2, "worker_class": "gevent"}
-    StandaloneApplication(app, options).run()
+    import sys
+    if sys.platform == "win32":
+        from waitress import serve
+        print("Running on Waitress server (Windows)")
+        serve(app, host='0.0.0.0', port=8080)
+    else:
+        from gunicorn.app.base import BaseApplication
+        class StandaloneApplication(BaseApplication):
+            def __init__(self, app, options=None):
+                self.application = app
+                self.options = options or {}
+                super().__init__()
+            def load_config(self):
+                for key, value in self.options.items():
+                    self.cfg.set(key, value)
+            def load(self):
+                return self.application
+        options = {"bind": "0.0.0.0:8080", "workers": 2, "worker_class": "gevent"}
+        StandaloneApplication(app, options).run()
