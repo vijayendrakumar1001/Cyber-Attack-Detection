@@ -9,4 +9,3 @@ joblib
 tensorflow
 keras
 gunicorn
-waitress
