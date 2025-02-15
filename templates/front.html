@@ -172,7 +172,7 @@
                 L7_PROTO: document.getElementById('l7Proto').value
             };
 
-            fetch('https://cyber-attack-detection.onrender.com/check_ip', {
+            fetch('https://cyber-attack-detection.onrender.com/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(inputData)
